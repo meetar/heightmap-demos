@@ -455,23 +455,6 @@ function imageFromCanvas(canvas) {
     return image
 }
 
-  function	booleanImageFromCanvas(canvas, threshold, negative)	{
-    threshold = typeof threshold !== 'undefined' ? threshold : 20;
-    negative = typeof negative !== 'undefined' ? negative : false;
-    var m = canvas.width
-    var n	= canvas.height
-
-    var data = canvas.getContext('2d').getImageData(0, 0, m, n).data
-    var booleanImage = new Array(m*n)
-    
-    for (var i=0; i<n*m; i++)	{
-        var c = data[i*4] < threshold ? 1 : 0
-        booleanImage[i] = negative ? 1-c : c
-    }
-
-    return booleanImage
-  }
-
   function drawImage(image) {
     c = document.getElementById("imgCanvas");
     ictx = c.getContext('2d')
