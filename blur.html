@@ -332,9 +332,10 @@
 
       octx.drawImage(heightmap, 0, 0, heightmap.width, heightmap.height);
       ictx.drawImage(heightmap, 0, 0, heightmap.width, heightmap.height);
-      
+      drawImage(stackBlur(0), "img");
       diffTexture.needsUpdate = true;
       dispTexture.needsUpdate = true;
+      
       update();
     };
       
@@ -386,7 +387,7 @@
     
     // GEOMETRY
 
-    geometry = new THREE.PlaneGeometry(512, 256, 512, 256);
+    geometry = new THREE.PlaneGeometry(512, 256, 51, 26);
     geometry.computeTangents();
     mesh = new THREE.Mesh( geometry, material);
     mesh.rotation.y = Math.PI;
