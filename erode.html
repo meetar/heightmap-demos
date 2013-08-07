@@ -1,9 +1,9 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-    <script type="text/javascript" src="/three.js"></script>
-   	<script type="text/javascript" src="/dat.gui.min.js"></script>
-    <script src="/TrackballControls.js"></script>
+    <script type="text/javascript" src="three.js"></script>
+   	<script type="text/javascript" src="dat.gui.min.js"></script>
+    <script src="TrackballControls.js"></script>
 
 	</head>
 	<body onload="start()" style="background:#888888" onmousemove="update()">
@@ -446,37 +446,37 @@ function imageFromCanvas(canvas) {
     diffTexture.needsUpdate = true;
     dispTexture.needsUpdate = true;
 
-update()    
+    update()    
   }
 
-    function localContrast(contrast){
-  c = document.getElementById("origCanvas")
-  m = c.width
-  n = c.height
-  image = imageFromCanvas(c)
-  newImage = new Array(image.length)
-  for (x in image) {
+  function localContrast(contrast){
+    c = document.getElementById("origCanvas")
+    m = c.width
+    n = c.height
+    image = imageFromCanvas(c)
+    newImage = new Array(image.length)
+    for (x in image) {
 
-    min = Infinity
-    min = Math.min(min, image[x-1]+contrast) // left
-    min = Math.min(min, image[x-m]+contrast) // up
-    min = Math.min(min, image[x-m-1]+contrast*1.41421356) // up-left
-    min = Math.min(min, image[x-m+1]+contrast*1.41421356) // up-right
-    if (image[x] > min) image[x] = min
+      min = Infinity
+      min = Math.min(min, image[x-1]+contrast) // left
+      min = Math.min(min, image[x-m]+contrast) // up
+      min = Math.min(min, image[x-m-1]+contrast*1.41421356) // up-left
+      min = Math.min(min, image[x-m+1]+contrast*1.41421356) // up-right
+      if (image[x] > min) image[x] = min
+    }
+    
+    for (x = image.length; x > 0; x--) {
+
+      min = Infinity
+      min = Math.min(min, image[x+1]+contrast) // right
+      min = Math.min(min, image[x+m]+contrast) // down
+      min = Math.min(min, image[x+m+1]+contrast*1.41421356) // down-right
+      min = Math.min(min, image[x+m-1]+contrast*1.41421356) // down-left
+      if (image[x] > min) image[x] = min
+
+    }
+    return image
   }
-  
-  for (x = image.length; x > 0; x--) {
-
-    min = Infinity
-    min = Math.min(min, image[x+1]+contrast) // right
-    min = Math.min(min, image[x+m]+contrast) // down
-    min = Math.min(min, image[x+m+1]+contrast*1.41421356) // down-right
-    min = Math.min(min, image[x+m-1]+contrast*1.41421356) // down-left
-    if (image[x] > min) image[x] = min
-
-  }
-  return image
-}
 
   
   //

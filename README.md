@@ -3,7 +3,7 @@ heightmap-demos
 
 A series of demos showing ways of manipulating a heightmap.
 
-scale.html – scale a displacement map
+file:///scale.html – scale a displacement map
 
 blur.html – blur and scale a displacement map, and adjusting the resolution of the base mesh
 
