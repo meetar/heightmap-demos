@@ -275,7 +275,7 @@
 
       
       
-      var dispTexture = THREE.ImageUtils.loadTexture( '/SRTM_US_scaled_512.jpg' , {}, function() { render(); } );
+      var dispTexture = THREE.ImageUtils.loadTexture( 'SRTM_US_scaled_512.jpg' , {}, function() { render(); } );
       var diffTexture = dispTexture;
       var shader = THREE.ShaderLib[ "normalmap" ];
       uniforms = THREE.UniformsUtils.clone( shader.uniforms );

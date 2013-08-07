@@ -358,7 +358,7 @@
 
 
     img = new Image();
-    img.src = '/SRTM_US_scaled_256.jpg';
+    img.src = 'SRTM_US_scaled_256.jpg';
 
     img.onload = function() {
       oimgc.width = img.width;
@@ -389,7 +389,7 @@
     uniforms[ "tOriginal" ] = { type: 't', value: originalTexture };
     uniforms[ "tOriginalOpacity" ] = { type: 'f', value: 100 };
 
-    uniforms[ "tNormal" ] = { type: 't', value: new THREE.ImageUtils.loadTexture( '/flat.png' )};
+    uniforms[ "tNormal" ] = { type: 't', value: new THREE.ImageUtils.loadTexture( 'flat.png' )};
     
     uniforms[ "uDiffuseColor" ].value = new THREE.Color( diffuse );
     uniforms[ "uSpecularColor" ].value = new THREE.Color( specular );

@@ -319,7 +319,7 @@
 
 
     heightmap = new Image();
-    heightmap.src = '/SRTM_US_scaled_2048.jpg';
+    heightmap.src = 'SRTM_US_scaled_2048.jpg';
 
     heightmap.onload = function() {
       imgc.width = heightmap.width;
@@ -342,7 +342,7 @@
     uniforms[ "tDisplacement" ] = { type: 't', value: dispTexture };
     uniforms[ "uDisplacementScale" ] = { type: 'f', value: 100 };
 
-    uniforms[ "tNormal" ] = { type: 't', value: new THREE.ImageUtils.loadTexture( '/flat.png' )};
+    uniforms[ "tNormal" ] = { type: 't', value: new THREE.ImageUtils.loadTexture( 'flat.png' )};
     
     uniforms[ "uDiffuseColor" ].value = new THREE.Color( diffuse );
     uniforms[ "uSpecularColor" ].value = new THREE.Color( specular );
