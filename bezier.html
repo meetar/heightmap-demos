@@ -1,0 +1,423 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+    <script type="text/javascript" src="/three.js"></script>
+   	<script type="text/javascript" src="/dat.gui.min.js"></script>
+    <script src="/TrackballControls.js"></script>
+
+	</head>
+	<body onload="start()" onMouseMove="update();" style="background:#888888">
+    <canvas id="myCanvas" style="position: absolute; visibility:hidden;"></canvas>
+    <canvas id="displayCanvas" width="100" height="100" style="border:1px solid #d3d3d3; position: absolute; background:#ffffff;"></canvas>
+
+  <div id="div1" style="top: 0px;position:absolute;"></div>
+		<div id="container"></div>
+
+    
+    
+    
+    
+    
+    
+    
+  <!-- ----- VERTEX SHADER ----- -->
+
+  <script id="vertex_shader" type="x-shader/x-vertex">
+
+    uniform float p2x;
+    uniform float p2y;
+    uniform float p3x;
+    uniform float p3y;
+
+    attribute vec4 tangent;
+    attribute float amplitude;
+    attribute float displacement;
+
+    varying vec3 vTangent;
+		varying vec3 vBinormal;
+		varying vec3 vNormal;
+		varying vec2 vUv;
+
+		varying vec3 vPointLightVector;
+		varying vec3 vViewPosition;
+
+    uniform vec3 uPointLightPos;
+
+    #ifdef VERTEX_TEXTURES
+
+      uniform sampler2D tDisp;
+      uniform float uDisplacementScale;
+      uniform float uDisplacementBias;
+      uniform float uDisplacementPostScale;
+
+    #endif
+    
+    // get the coordinates of a point v along a cubic curve
+    // from (0,0) to (100,100)
+    // adapted from http://stackoverflow.com/a/8935334/738675
+    vec2 getPointOnCubic( float v ) {
+      float B1 = (1.0 - v) * (1.0 - v) * (1.0 - v);
+      float B2 = 3.0 * v * (1.0 - v) * (1.0 - v);
+      float B3 = 3.0 * v * v * (1.0 - v);
+      float B4 = v * v * v;
+
+      float x = (p2x * B2) + (p3x * B3) + (100.0 * B4);
+      float y = (p2y * B2) + (p3y * B3) + (100.0 * B4);
+
+      return vec2(x,y);
+    }
+    
+    // get the y coordinate of a point on a cubic curve
+    // at coordinate x - brute binary search
+    // adapted from http://stackoverflow.com/a/7355667/738675
+    float yFromX( float xTarget ) {
+      float xTolerance = 0.0001; // adjust to taste
+
+      // establish bounds
+      float lower = 0.0;
+      float upper = 1.0;
+      float percent = (upper + lower) / 2.0;
+
+      // set an initial x to start searching from
+      float x = getPointOnCubic(percent)[0];
+
+      // loop until completion
+      while(abs(xTarget - x) > xTolerance) {
+        if(xTarget > x) 
+          lower = percent;
+        else 
+          upper = percent;
+
+        percent = (upper + lower) / 2.0;
+        x = getPointOnCubic(percent)[0];
+      }
+      // we're within tolerance of the desired x value,
+      // return the y value.
+      return getPointOnCubic(percent)[1];
+    }
+      
+    
+		void main() {
+
+      vec4 mPosition = modelMatrix * vec4( position, 1.0 );
+      vViewPosition = cameraPosition - mPosition.xyz;
+
+      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+      vNormal = normalize( normalMatrix * normal );
+
+      // tangent and binormal vectors
+      vTangent = normalize( normalMatrix * tangent.xyz );
+
+      vBinormal = cross( vNormal, vTangent ) * tangent.w;
+      vBinormal = normalize( vBinormal );
+
+      vUv = uv;
+
+      // point light
+      vec4 lPosition      = viewMatrix * vec4( uPointLightPos, 1.0 );
+      vPointLightVector   = normalize( lPosition.xyz - mvPosition.xyz );
+
+      #ifdef VERTEX_TEXTURES
+          vec3 dv                 = texture2D( tDisp, vUv ).xyz;
+          float df                = uDisplacementScale * dv.x + uDisplacementBias;
+          
+       // vec4 displacedPosition  = vec4( vNormal.xyz * df, 0.0 ) + mvPosition;
+          vec4 displacedPosition  = vec4( vNormal.xyz * yFromX(df) * uDisplacementPostScale/100.0, 0.0 ) + mvPosition;
+
+          gl_Position             = projectionMatrix * displacedPosition;
+      #else
+        gl_Position = projectionMatrix * mvPosition;
+      #endif
+		}
+
+  </script>
+
+    
+    
+    
+  <!-- ----- FRAGMENT SHADER ----- -->    
+  
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+    uniform vec3 uPointLightPos;
+
+    uniform vec3 uAmbientLightColor;
+    uniform vec3 uPointLightColor;
+
+    uniform vec3 uAmbientColor;
+    uniform vec3 uDiffuseColor;
+    
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tNormal;
+
+    varying vec3 vTangent;
+    varying vec3 vBinormal;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+
+    varying vec3 vPointLightVector;
+    varying vec3 vViewPosition;
+
+    void main() {
+
+      vec3 diffuseTex     = texture2D( tDiffuse, vUv ).xyz;
+      vec3 normalTex      = texture2D( tNormal, vUv ).xyz * 2.0 - 1.0;
+
+      mat3 tsb            = mat3( vTangent, vBinormal, vNormal );
+      vec3 finalNormal    = tsb * normalTex.rgb;
+
+      vec3 normal         = normalize( finalNormal );
+      vec3 viewPosition   = normalize( vViewPosition );
+
+      // point light
+
+      vec4 pointDiffuse           = vec4( 0.0, 0.0, 0.0, 0.0 );
+      
+      vec3 pointVector            = normalize( vPointLightVector );
+      float pointDiffuseWeight    = max( dot( normal * 2.0, pointVector ), 0.0 );
+
+      pointDiffuse               += vec4( uDiffuseColor, 1.0 ) * pointDiffuseWeight;
+
+      // all lights contribution summation
+
+      vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
+      totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse ); // orig
+
+      gl_FragColor = vec4( (diffuseTex * totalLight.xyz), 1.0 );
+                    
+    }
+  </script>
+		
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  <!-- ----- MAIN THREE.JS CODE ----- -->   
+ 
+  <script type="text/javascript">
+    var div1 = container = document.getElementById( 'div1' );
+    var camera, scene, renderer, container;
+    var light, ambientLight, pointLight, moon;
+    var uniforms, attributes;
+
+    var t           = 0;
+    var diameter    = 1200;
+    var dist_x      = 0;
+    var step        = 0;
+
+    function start(){
+        init();
+        // setInterval( loop, 1000 / 60 );
+    }
+    
+    
+    
+    
+    function init() {
+
+      container = document.getElementById( 'container' );
+
+      // --- WebGl render
+
+      try {
+          renderer = new THREE.WebGLRenderer();
+          renderer.setSize( window.innerWidth, window.innerHeight );
+          renderer.autoClear = false;
+          container.appendChild( renderer.domElement );
+      }
+      catch (e) {
+          alert(e);
+      }
+
+      scene = new THREE.Scene();
+
+      // --- Camera
+
+      var fov = 45; // camera field-of-view in degrees
+      var width = renderer.domElement.width;
+      var height = renderer.domElement.height;
+      var aspect = width / height; // view aspect ratio
+      camera = new THREE.PerspectiveCamera( fov, aspect );
+      camera.position.z = -300;
+      camera.position.y = -300;
+      camera.lookAt(scene.position);
+      camera.updateMatrix();
+
+      controls = new THREE.TrackballControls( camera, renderer.domElement );
+      controls.rotateSpeed = 1.0;
+      controls.zoomSpeed = 1.2;
+      controls.panSpeed = 0.8;
+      controls.noZoom = false;
+      controls.noPan = false;
+      controls.staticMoving = true;
+      controls.dynamicDampingFactor = 0.3;
+      controls.addEventListener( 'change', render );
+
+
+      // --- Lights
+
+      ambientLight = new THREE.AmbientLight( 0xffffff );
+      scene.add( ambientLight );
+
+
+
+      // MATERIAL
+
+      var ambient = 0xffffff, diffuse = 0xffffff, shininess = 4.0, scale = 100;
+
+      
+      
+      var dispTexture = THREE.ImageUtils.loadTexture( '/SRTM_US_scaled_512.jpg' , {}, function() { render(); } );
+      var diffTexture = dispTexture;
+      var shader = THREE.ShaderLib[ "normalmap" ];
+      uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+
+      
+      
+      
+      uniforms[ "enableDisplacement" ].value = true;
+      uniforms[ "enableDiffuse" ].value = true;
+      uniforms[ "tDiffuse" ].value = diffTexture;
+      uniforms[ "tDisp" ] = { type: 't', value: dispTexture};
+      uniforms[ "uDisplacementScale" ].value = 100;
+      uniforms[ "uAmbientColor" ].value = new THREE.Color( ambient );
+      // uniforms[ "uPointLightColor" ] = {type: "c", value: new THREE.Color( pointLight.color )};
+      uniforms[ "uAmbientLightColor" ] = {type: "c", value: new THREE.Color( ambientLight.color )};
+
+      uniforms[ "uDisplacementPostScale" ] = {type: 'f', value: 100 };
+      uniforms[ "p2x" ] = {type: 'f', value: 0.0 };
+      uniforms[ "p2y" ] = {type: 'f', value: 0.0 };
+      uniforms[ "p3x" ] = {type: 'f', value: 1.0 };
+      uniforms[ "p3y" ] = {type: 'f', value: 1.0 };
+      
+      var material = new THREE.ShaderMaterial( {
+              uniforms: uniforms,
+              vertexShader: document.getElementById( 'vertex_shader' ).textContent,
+              fragmentShader: document.getElementById( 'fragment_shader' ).textContent,
+              side: THREE.DoubleSide
+      } );
+      
+      // GEOMETRY
+
+      geometry = new THREE.PlaneGeometry(512, 256, 512, 256);
+      geometry.computeTangents();
+      
+      var plane = new THREE.Mesh( geometry, material);
+      plane.rotation.y = Math.PI;
+
+      scene.add(plane);
+  
+    }
+
+    function update() {
+      // t+= 0.01;
+      // moon.rotation.y = t / 4;
+      render();
+      controls.update();
+    }
+
+function render() {
+      renderer.clear();
+      renderer.render(scene, camera);
+}
+    
+    // bezier interface
+    
+    var p1x = 0.0,
+        p1y = 0.0,
+        p2x = 0.0,
+        p2y = 0.0,
+        p3x = 100.0,
+        p3y = 100.0,
+        p4x = 100.0,
+        p4y = 100.0;
+
+    var c=document.getElementById("myCanvas");
+    var ctx=c.getContext("2d");
+    var display=document.getElementById("displayCanvas");
+    var dctx=display.getContext("2d");
+
+    function drawCurve() {
+      ctx.clearRect ( 0 , 0 , 100 , 100 );
+      ctx.beginPath();
+      ctx.moveTo(p1x,p1y);
+      ctx.bezierCurveTo(p2x,p2y,p3x,p3y,p4x,p4y);
+      ctx.stroke();
+
+      dctx.clearRect ( 0 , 0 , 100 , 100 );
+      dctx.beginPath();
+      dctx.moveTo(p1x,100.0);
+      dctx.bezierCurveTo(p2x,(-p2y+100),p3x,(-p3y+100),p4x,0);
+      dctx.stroke();
+      
+      setCurve();
+    }
+ 
+    function setCurve() {
+      uniforms.p2x.value = p2x;
+      uniforms.p2y.value = p2y;
+      uniforms.p3x.value = p3x;
+      uniforms.p3y.value = p3y;
+    }
+
+    // GUI
+    
+    var initDisp = function() {
+      this.message = 'adjust curve';
+      this.scale = 100;
+      this.p1x = 0;
+      this.p1y = 0;
+      this.p2x = 100;
+      this.p2y = 100;
+    }
+
+    window.onload = function() {
+      var disp = new initDisp();
+      var gui = new dat.GUI();
+      // console.log(gui);
+      gui.add(disp, 'message');
+      p1xControl = gui.add(disp, 'p1x', 0, 100);
+      p1yControl = gui.add(disp, 'p1y', 0, 100);
+      p2xControl = gui.add(disp, 'p2x', 0, 100);
+      p2yControl = gui.add(disp, 'p2y', 0, 100);
+
+      p1xControl.onChange(function(value) {
+        p2x = value;
+        drawCurve();
+      });
+      p1yControl.onChange(function(value) {
+        p2y = value;
+        drawCurve();
+      });
+      p2xControl.onChange(function(value) {
+        p3x = value;
+        drawCurve();
+      });
+      p2yControl.onChange(function(value) {
+        p3y = value;
+        drawCurve();
+      });
+
+      controller = gui.add(disp, 'scale', 0, 200);
+      controller.onChange(function(value) {
+        uniforms[ "uDisplacementPostScale" ].value = value;
+      });
+
+      start();
+        		controls.update();
+      drawCurve();
+      
+    };
+    
+  </script>
+  
+	</body>
+</html>

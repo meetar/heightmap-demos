@@ -1,0 +1,515 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+    <script type="text/javascript" src="/three.js"></script>
+   	<script type="text/javascript" src="/dat.gui.min.js"></script>
+    <script src="/TrackballControls.js"></script>
+
+	</head>
+	<body onload="start()" style="background:#888888" onmousemove="update()">
+    <canvas id="imgCanvas" style="position: absolute; visibility:visible;"></canvas>
+    <canvas id="origCanvas" style="position: absolute; visibility:hidden;"></canvas>
+
+		<div id="container"></div>
+
+    
+    
+
+  <!-- ----- VERTEX SHADER ----- -->
+  <script id="vertex_shader" type="x-shader/x-vertex">
+
+    uniform float p2x;
+    uniform float p2y;
+    uniform float p3x;
+    uniform float p3y;
+
+    attribute vec4 tangent;
+    attribute float amplitude;
+    attribute float displacement;
+
+    varying vec3 vTangent;
+		varying vec3 vBinormal;
+		varying vec3 vNormal;
+		varying vec2 vUv;
+
+		varying vec3 vPointLightVector;
+		varying vec3 vViewPosition;
+
+    uniform vec3 uPointLightPos;
+
+    #ifdef VERTEX_TEXTURES
+
+      uniform sampler2D tDisplacement;
+      uniform float uDisplacementScale;
+      uniform float uDisplacementBias;
+      uniform float uDisplacementPostScale;
+
+    #endif    
+	   
+		void main() {
+
+      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+      vViewPosition = -mvPosition.xyz; // ah HA
+
+      vNormal = normalize( normalMatrix * normal );
+
+      //tangent and binormal vectors
+      vTangent = normalize( normalMatrix * tangent.xyz );
+
+      vBinormal = cross( vNormal, vTangent ) * tangent.w;
+      vBinormal = normalize( vBinormal );
+
+      vUv = uv;
+
+      
+      
+      // point light
+      vec4 lPosition      = viewMatrix * vec4( uPointLightPos, 1.0 );
+      vPointLightVector   = normalize( lPosition.xyz - mvPosition.xyz );
+
+      #ifdef VERTEX_TEXTURES
+          vec3 dv                 = texture2D( tDisplacement, vUv ).xyz;
+          float df                = uDisplacementScale * dv.x + uDisplacementBias;
+          
+          vec4 displacedPosition  = vec4( vNormal.xyz * df * uDisplacementPostScale/100.0, 0.0 ) + mvPosition;
+
+          gl_Position             = projectionMatrix * displacedPosition;
+      #else
+        gl_Position = projectionMatrix * mvPosition;
+      #endif
+		}
+
+  </script>
+    
+    
+    
+    
+  <!-- ----- FRAGMENT SHADER ----- -->    
+  
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+    uniform vec3 uPointLightPos;
+
+    uniform vec3 uAmbientLightColor;
+    uniform vec3 uPointLightColor;
+
+    uniform vec3 uAmbientColor;
+    uniform vec3 uDiffuseColor;
+    
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tNormal;
+
+    varying vec3 vTangent;
+    varying vec3 vBinormal;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+
+    varying vec3 vPointLightVector;
+    varying vec3 vViewPosition;
+
+    void main() {
+
+      vec3 diffuseTex     = texture2D( tDiffuse, vUv ).xyz;
+      vec3 normalTex      = texture2D( tNormal, vUv ).xyz * 2.0 - 1.0;
+
+      mat3 tsb            = mat3( vTangent, vBinormal, vNormal );
+      vec3 finalNormal    = tsb * normalTex.rgb;
+
+      vec3 normal         = normalize( finalNormal );
+      vec3 viewPosition   = normalize( vViewPosition );
+
+      // point light
+
+      vec4 pointDiffuse           = vec4( 0.0, 0.0, 0.0, 0.0 );
+      
+      vec3 pointVector            = normalize( vPointLightVector );
+      float pointDiffuseWeight    = max( dot( normal * 2.0, pointVector ), 0.0 );
+
+      pointDiffuse               += vec4( uDiffuseColor, 1.0 ) * pointDiffuseWeight;
+
+      // all lights contribution summation
+
+      vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
+      totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse ); // orig
+
+      gl_FragColor = vec4( (diffuseTex * totalLight.xyz), 1.0 );
+                    
+    }
+  </script>
+		
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  <!-- ----- MAIN THREE.JS CODE ----- -->   
+ 
+  <script type="text/javascript">
+ 
+  var camera, scene, renderer, container;
+  var light, ambientLight, pointLight, moon;
+  var uniforms, attributes;
+  var heightmap, diffTexture, dispTexture;
+  
+  var t           = 0;
+  var diameter    = 1200;
+  var dist_x      = 0;
+  var step        = 0;
+
+  var imgc=document.getElementById("imgCanvas");
+  var ictx=imgc.getContext("2d");
+  var oimgc=document.getElementById("origCanvas");
+  var octx=oimgc.getContext("2d");
+ 
+  function start(){
+      init();
+      // setInterval( loop, 1000 / 60 );
+
+  }
+  
+  function init() {
+
+    container = document.getElementById( 'container' );
+
+    // --- WebGl render
+
+    try {
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.autoClear = false;
+        container.appendChild( renderer.domElement );
+    }
+    catch (e) {
+        alert(e);
+    }
+
+    scene = new THREE.Scene();
+
+    // --- Camera
+
+    var fov = 45; // camera field-of-view in degrees
+    var width = renderer.domElement.width;
+    var height = renderer.domElement.height;
+    var aspect = width / height; // view aspect ratio
+    camera = new THREE.PerspectiveCamera( fov, aspect );
+    camera.position.z = -300;
+    camera.position.y = -300;
+    camera.lookAt(scene.position);
+    camera.updateMatrix();
+
+    controls = new THREE.TrackballControls( camera, renderer.domElement );
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.8;
+    controls.noZoom = false;
+    controls.noPan = false;
+    controls.staticMoving = true;
+    controls.dynamicDampingFactor = 0.3;
+    controls.addEventListener( 'change', render );
+
+
+    // --- Lights
+
+    // no lights!
+
+
+    // MATERIAL
+
+    var ambient = 0x000000, diffuse = 0x000000, specular = 0x000000, shininess = 0.0, scale = 100;
+
+    diffTexture = new THREE.Texture(imgc);
+    dispTexture = new THREE.Texture(imgc);
+
+
+    heightmap = new Image();
+    heightmap.src = '/SRTM_US_scaled_512.jpg';
+
+    heightmap.onload = function() {
+      oimgc.width = heightmap.width;
+      oimgc.height = heightmap.height;
+      imgc.width = heightmap.width;
+      imgc.height = heightmap.height;
+
+      octx.drawImage(heightmap, 0, 0, heightmap.width, heightmap.height);
+      ictx.drawImage(heightmap, 0, 0, heightmap.width, heightmap.height);
+      
+      diffTexture.needsUpdate = true;
+      dispTexture.needsUpdate = true;
+
+      update()
+
+    };
+          
+    var shader = THREE.ShaderLib[ "normalmap" ];
+    uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+    
+    uniforms[ "enableDisplacement" ].value = true;
+    uniforms[ "enableDiffuse" ].value = 0;
+    uniforms[ "tDiffuse" ].value = diffTexture;
+    uniforms[ "tDiffuseOpacity" ] = { type: 'f', value: 1.0 };
+
+    uniforms[ "tDisplacement" ] = { type: 't', value: dispTexture};
+    uniforms[ "uDisplacementScale" ].value = 100;
+    uniforms[ "uAmbientColor" ].value = new THREE.Color( ambient );
+    // uniforms[ "uPointLightColor" ] = {type: "c", value: new THREE.Color( pointLight.color )};
+    // uniforms[ "uAmbientLightColor" ] = {type: "c", value: new THREE.Color( ambientLight.color )};
+
+    uniforms[ "uDisplacementPostScale" ] = {type: 'f', value: 100 };
+    uniforms[ "p2x" ] = {type: 'f', value: 0.0 };
+    uniforms[ "p2y" ] = {type: 'f', value: 0.0 };
+    uniforms[ "p3x" ] = {type: 'f', value: 1.0 };
+    uniforms[ "p3y" ] = {type: 'f', value: 1.0 };
+    
+    uniforms[ "uDiffuseColor" ].value = new THREE.Color( diffuse );
+    uniforms[ "uSpecularColor" ].value = new THREE.Color( specular );
+    uniforms[ "uAmbientColor" ].value = new THREE.Color( ambient );
+    uniforms[ "uShininess" ].value = shininess;
+    
+    var material = new THREE.ShaderMaterial( {
+            uniforms: uniforms,
+            vertexShader: document.getElementById( 'vertex_shader' ).textContent,
+            fragmentShader: document.getElementById( 'fragment_shader' ).textContent,
+            side: THREE.DoubleSide
+    } );
+    
+    // GEOMETRY
+
+    geometry = new THREE.PlaneGeometry(512, 256, 512, 256);
+    geometry.computeTangents();
+    
+    var plane = new THREE.Mesh( geometry, material);
+    plane.rotation.y = Math.PI;
+
+    scene.add(plane);
+
+  }
+
+  function update() {
+    render();
+    controls.update(); // trackball interaction
+  }
+
+  function render() {
+        renderer.clear();
+        renderer.render(scene, camera);
+  }
+  
+
+ 
+    
+    //
+    // JAVASCRIPT IMAGE MANIPULATION
+    //
+    
+    
+  function log(n) {
+    console.log(n);
+  }
+
+function draw(image) {
+      // find range
+    minimum = Infinity
+    maximum = 0
+
+    var d = 0
+    for (var i=0; i<image.length; i++) {
+        d = image[i]
+        minimum = Math.min(minimum, d)
+        maximum = Math.max(maximum, d)
+    }
+    
+        var c=document.getElementById("origCanvas");
+    // ictx = c.getContext('2d')
+    var m = c.width
+    var n = c.height
+
+    var finalImage = ictx.createImageData(m, n);
+    var data = finalImage.data    // pixel data array of (width*height*4) elements
+
+    var contrast  = 2
+    var distanceColor = { r : 255*contrast/255, g : 255*contrast/255, b : 255*contrast/255 }
+
+    var ceil = 255
+    var floor = 0
+    
+    newmin = Infinity
+    newmax = 0
+    
+    // Convert to visible
+    for (var i=0; i<n*m; i++) {
+        d = image[i]
+        normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
+        newmin = Math.min(newmin, normd)
+        newmax = Math.max(newmax, normd)
+
+        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
+        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
+        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
+
+        data[i*4+0] = normd
+        data[i*4+1] = normd
+        data[i*4+2] = normd
+
+        data[i*4+3] = 255
+    }
+    
+    ictx.putImageData(finalImage, 0, 0)
+    
+}  
+
+function imageFromCanvas(canvas) {
+
+    var m = canvas.width
+    var n = canvas.height
+    var data = canvas.getContext('2d').getImageData(0, 0, m, n).data
+    var image = new Array(m*n)
+    
+    for (var i=0; i<n*m; i++) {
+        image[i] = data[i*4]
+    }
+    return image
+}
+
+  function	booleanImageFromCanvas(canvas, threshold, negative)	{
+    threshold = typeof threshold !== 'undefined' ? threshold : 20;
+    negative = typeof negative !== 'undefined' ? negative : false;
+    var m = canvas.width
+    var n	= canvas.height
+
+    var data = canvas.getContext('2d').getImageData(0, 0, m, n).data
+    var booleanImage = new Array(m*n)
+    
+    for (var i=0; i<n*m; i++)	{
+        var c = data[i*4] < threshold ? 1 : 0
+        booleanImage[i] = negative ? 1-c : c
+    }
+
+    return booleanImage
+  }
+
+  function drawImage(image) {
+    c = document.getElementById("imgCanvas");
+    ictx = c.getContext('2d')
+    var m = c.width
+    var n	= c.height
+    
+    // find range
+    minimum = 1000000000000000000
+    maximum = 0
+
+    var d = 0
+    for (var i=0; i<n*m; i++)	{
+        d = image[i]
+        minimum = Math.min(minimum, d)
+        maximum = Math.max(maximum, d)
+    }
+    
+    var finalImage = ictx.createImageData(m, n);
+    var data = finalImage.data    // pixel data array of (width*height*4) elements
+
+    var contrast	= 2
+    var distanceColor	= { r : 255*contrast/255, g : 255*contrast/255, b : 255*contrast/255 }
+
+    var ceil = 255
+    var floor = 0
+    
+    newmin = 1000000000000000
+    newmax = 0
+    
+    // Convert to visible
+    for (var i=0; i<n*m; i++)	{
+        d = image[i]
+        normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
+        newmin = Math.min(newmin, normd)
+        newmax = Math.max(newmax, normd)
+
+        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
+        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
+        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
+
+        data[i*4+0] = normd
+        data[i*4+1] = normd
+        data[i*4+2] = normd
+
+        data[i*4+3] = 255
+    }
+    
+    ictx.putImageData(finalImage, 0, 0)
+    
+    diffTexture.needsUpdate = true;
+    dispTexture.needsUpdate = true;
+
+update()    
+  }
+
+    function localContrast(contrast){
+  c = document.getElementById("origCanvas")
+  m = c.width
+  n = c.height
+  image = imageFromCanvas(c)
+  newImage = new Array(image.length)
+  for (x in image) {
+
+    min = Infinity
+    min = Math.min(min, image[x-1]+contrast) // left
+    min = Math.min(min, image[x-m]+contrast) // up
+    min = Math.min(min, image[x-m-1]+contrast*1.41421356) // up-left
+    min = Math.min(min, image[x-m+1]+contrast*1.41421356) // up-right
+    if (image[x] > min) image[x] = min
+  }
+  
+  for (x = image.length; x > 0; x--) {
+
+    min = Infinity
+    min = Math.min(min, image[x+1]+contrast) // right
+    min = Math.min(min, image[x+m]+contrast) // down
+    min = Math.min(min, image[x+m+1]+contrast*1.41421356) // down-right
+    min = Math.min(min, image[x+m-1]+contrast*1.41421356) // down-left
+    if (image[x] > min) image[x] = min
+
+  }
+  return image
+}
+
+  
+  //
+  // GUI
+  //
+  
+  var initDisp = function() {
+    this.scale = 100;
+    this.threshhold = 16.0;
+  }
+
+  window.onload = function() {
+    var disp = new initDisp();
+    var gui = new dat.GUI();
+
+    controller = gui.add(disp, 'scale', 0, 200);
+    controller.onChange(function(value) {
+      uniforms[ "uDisplacementPostScale" ].value = value;
+    });
+
+    tcontroller = gui.add(disp, 'threshhold', .1, 16.0);
+    tcontroller.onChange(function(value) {
+      drawImage(localContrast(value));
+    });
+
+    
+    start();
+    controls.update();
+  };
+
+    
+      
+  </script>
+  
+	</body>
+</html>
