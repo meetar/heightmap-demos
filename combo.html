@@ -9,8 +9,8 @@
 	</head>
 	<body onload="start()" style="background:#888888;" onmousemove="update()">
 
-<canvas id="origCanvas" style="position: relative; visibility:hidden;"></canvas>
-<canvas id="imgCanvas" style="position: relative; visibility:visible;"></canvas>
+<canvas id="origCanvas" style="position: absolute; visibility:hidden;"></canvas>
+<canvas id="imgCanvas" style="position: absolute; visibility:visible;"></canvas>
 
   <div id="container"></div>
 
@@ -276,8 +276,6 @@
 
   var oimgc=document.getElementById("origCanvas");
   var octx=oimgc.getContext("2d");
-  var pimgc=document.getElementById("preCanvas");
-  var pctx=pimgc.getContext("2d");
   var imgc=document.getElementById("imgCanvas");
   var ictx=imgc.getContext("2d");
   
@@ -363,16 +361,13 @@
     img.onload = function() {
       oimgc.width = img.width;
       oimgc.height = img.height;
-      pimgc.width = img.width;
-      pimgc.height = img.height;
       imgc.width = img.width;
       imgc.height = img.height;
 
       octx.drawImage(img, 0, 0, img.width, img.height);
-      pctx.drawImage(img, 0, 0, img.width, img.height);
       ictx.drawImage(img, 0, 0, img.width, img.height);
 
-      drawImage(doErode(0.0), "pre")
+      diffTexture.needsUpdate = true;
       update();
 
     };
@@ -591,8 +586,8 @@ function imageFromCanvas(canvas) {
   
   function localContrast(erode, dilate) {
     
-    drawImage(doErode(erode), "img")
-    drawImage(doDilate(dilate), "img")
+    drawImage(doErode(erode), "img");
+    drawImage(doDilate(dilate), "img");
 
   }
 
@@ -622,7 +617,7 @@ function imageFromCanvas(canvas) {
       if (image[x] > min) image[x] = min
 
     }
-    return image
+    return image;
   }
 
   function doDilate(contrast) {
@@ -684,10 +679,6 @@ function imageFromCanvas(canvas) {
       }
     }
 
-    // apply overlay
-    // for (x in newImage) {
-      // newImage[x] = newImage[x]-(newImage[x]-image[x])*overlay;
-    // }
     return newImage;
   }
 
