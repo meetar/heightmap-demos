@@ -288,8 +288,7 @@
 
     try {
         renderer = new THREE.WebGLRenderer();
-        // renderer.setSize( window.innerWidth, window.innerHeight );
-        renderer.setSize( 1300, 512 );
+        renderer.setSize( window.innerWidth, window.innerHeight );
         renderer.autoClear = false;
         // renderer.context.getExtension('OES_standard_derivatives');
         container.appendChild( renderer.domElement );
@@ -307,13 +306,13 @@
 
     // --- Camera
 
-    var fov = 35; // camera field-of-view in degrees
+    var fov = 15; // camera field-of-view in degrees
     var width = renderer.domElement.width;
     var height = renderer.domElement.height;
     var aspect = width / height; // view aspect ratio
     camera = new THREE.PerspectiveCamera( fov, aspect );
-    camera.position.z = -120;
-    camera.position.y = -440;
+    camera.position.z = -600;
+    camera.position.y = -800;
     camera.lookAt(scene.position);
     camera.updateMatrix();
 
