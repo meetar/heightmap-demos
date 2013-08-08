@@ -3,6 +3,8 @@ heightmap-demos
 
 A series of demos showing ways of manipulating a heightmap.
 
+![US heightmap in three.js](http://meetar.github.io/heightmap-demos/US_combo1.png)
+
 http://meetar.github.io/heightmap-demos/scale.html - scale a displacement map
 
 http://meetar.github.io/heightmap-demos/blur.html - blur and scale a displacement map, and adjust the resolution of the base mesh
