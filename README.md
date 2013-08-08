@@ -15,4 +15,6 @@ http://meetar.github.io/heightmap-demos/erode.html - apply an "erode" morphologi
 
 http://meetar.github.io/heightmap-demos/combo.html - apply a dilate and erode to a displacement map, adjusting the diffuse shading of the map and the "overlay" of the original map.
 
+http://meetar.github.io/heightmap-demos/adaptive.html - tie the erosion and scale values to the distance between the camera and the model - this keeps the largest mountains roughly the same size on the screen, independent of the zoom level.
+
 Note: The heightmaps used in these demos (all based on SRTM_US_scaled_2048.jpg) are taken from the SRTM's plate carrée data and scaled horizontally to roughly match the width of a Mercator projection, for aesthetic purposes. As such, they are not suitable for use in any application which might have non-aesthetic import.
