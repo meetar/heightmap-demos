@@ -1,7 +1,7 @@
 heightmap-demos
 ===============
 
-A series of demos showing ways of manipulating a heightmap.
+A series of demos showing ways of manipulating a heightmap in three.js.
 
 ![US heightmap in three.js](http://meetar.github.io/heightmap-demos/US_combo1.png)
 
