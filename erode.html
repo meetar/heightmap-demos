@@ -114,10 +114,9 @@
     varying vec3 vViewPosition;
 
     uniform float uDisplacementPostScale;
-
       
-  uniform sampler2D bumpMap;
-  uniform float bumpScale;
+    uniform sampler2D bumpMap;
+    uniform float bumpScale;
 
   // Derivative maps - bump mapping unparametrized surfaces by Morten Mikkelsen
   //	http://mmikkelsen3d.blogspot.sk/2011/07/derivative-maps.html
@@ -185,23 +184,17 @@
       vec3 pointHalfVector        = normalize( vPointLightVector + viewPosition );
 
       
-      				// specular
+      // specular
 
-				float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
+      float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
       float pointSpecularWeight   = 0.0;  //
-				pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
-
-
-
-					pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
-          
+      pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
+      pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
           
       if ( pointDotNormalHalf >= 0.0 )    pointSpecularWeight = pow( pointDotNormalHalf, uShininess );  // no spectex
-
       pointDiffuse                  += vec4( uDiffuseColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointDiffuseWeight;
 
       // all lights contribution summation
-
 
       vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
       totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse + pointSpecular );
@@ -248,8 +241,6 @@
  
   function start(){
       init();
-      // setInterval( loop, 1000 / 60 );
-
   }
   
   function init() {
@@ -392,7 +383,7 @@
   }
 
 function draw(image) {
-      // find range
+    // find range
     minimum = Infinity
     maximum = 0
 
@@ -403,8 +394,7 @@ function draw(image) {
         maximum = Math.max(maximum, d)
     }
     
-        var c=document.getElementById("origCanvas");
-    // ictx = c.getContext('2d')
+    var c=document.getElementById("origCanvas");
     var m = c.width
     var n = c.height
 
@@ -426,10 +416,6 @@ function draw(image) {
         normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
         newmin = Math.min(newmin, normd)
         newmax = Math.max(newmax, normd)
-
-        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
-        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
-        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
 
         data[i*4+0] = normd
         data[i*4+1] = normd
@@ -490,10 +476,6 @@ function imageFromCanvas(canvas) {
         normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
         newmin = Math.min(newmin, normd)
         newmax = Math.max(newmax, normd)
-
-        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
-        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
-        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
 
         data[i*4+0] = normd
         data[i*4+1] = normd

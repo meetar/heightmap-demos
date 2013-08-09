@@ -172,6 +172,7 @@
       normal = perturbNormalArb( -vViewPosition, normal * vec3(100.0/(uDisplacementPostScale+1.0)), dHdxy_fwd() );
 
       normal = normalize(normal);
+      
       // point light
 
       vec4 pointDiffuse           = vec4( 0.0, 0.0, 0.0, 0.0 );
@@ -183,25 +184,18 @@
       float pointDiffuseWeight = max( dotProduct, 0.0 );
       
       vec3 pointHalfVector        = normalize( vPointLightVector + viewPosition );
-
       
-      				// specular
+      // specular
 
-				float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
+      float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
       float pointSpecularWeight   = 0.0;  //
-				pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
-
-
-
-					pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
-          
+      pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
+      pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
           
       if ( pointDotNormalHalf >= 0.0 )    pointSpecularWeight = pow( pointDotNormalHalf, uShininess );  // no spectex
-
       pointDiffuse                  += vec4( uDiffuseColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointDiffuseWeight;
 
       // all lights contribution summation
-
 
       vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
       totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse + pointSpecular );
@@ -235,11 +229,6 @@
   var light, ambientLight, pointLight, plane;
   var uniforms, attributes;
   var heightmap, diffTexture, dispTexture;
-  
-  var t           = 0;
-  var diameter    = 1200;
-  var dist_x      = 0;
-  var step        = 0;
 
   var imgc=document.getElementById("imgCanvas");
   var ictx=imgc.getContext("2d");
@@ -248,8 +237,6 @@
  
   function start(){
       init();
-      // setInterval( loop, 1000 / 60 );
-
   }
   
   function init() {
@@ -382,7 +369,6 @@
   document.addEventListener( 'mousemove', onDocumentMouseMove, false );
   function onDocumentMouseMove( event ) {
     camera.fov = (1-(event.clientY/window.innerHeight)) * 135 ;
-    // log(camera.fov);
     plane.position.x = event.clientX/window.innerWidth * -500 + 250;
     camera.updateProjectionMatrix();
     disp.scale = uniforms[ "uDisplacementScale" ].value = ( (camera.fov/135) * 100 );
@@ -402,7 +388,7 @@
   }
 
 function draw(image) {
-      // find range
+    // find range
     minimum = Infinity
     maximum = 0
 
@@ -413,8 +399,7 @@ function draw(image) {
         maximum = Math.max(maximum, d)
     }
     
-        var c=document.getElementById("origCanvas");
-    // ictx = c.getContext('2d')
+    var c=document.getElementById("origCanvas");
     var m = c.width
     var n = c.height
 
@@ -436,10 +421,6 @@ function draw(image) {
         normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
         newmin = Math.min(newmin, normd)
         newmax = Math.max(newmax, normd)
-
-        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
-        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
-        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
 
         data[i*4+0] = normd
         data[i*4+1] = normd
@@ -500,10 +481,6 @@ function imageFromCanvas(canvas) {
         normd = ((ceil - floor) * (d - minimum))/(maximum - minimum) + floor
         newmin = Math.min(newmin, normd)
         newmax = Math.max(newmax, normd)
-
-        // data[i*4+0] = Math.min(ceil, d*distanceColor.r)
-        // data[i*4+1] = Math.min(ceil, d*distanceColor.g)
-        // data[i*4+2] = Math.min(ceil, d*distanceColor.b)
 
         data[i*4+0] = normd
         data[i*4+1] = normd

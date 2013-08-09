@@ -118,10 +118,9 @@
     varying vec3 vViewPosition;
 
     uniform float uDisplacementPostScale;
-
       
-  uniform sampler2D bumpMap;
-  uniform float bumpScale;
+    uniform sampler2D bumpMap;
+    uniform float bumpScale;
 
   // Derivative maps - bump mapping unparametrized surfaces by Morten Mikkelsen
   //	http://mmikkelsen3d.blogspot.sk/2011/07/derivative-maps.html
@@ -189,23 +188,17 @@
       vec3 pointHalfVector        = normalize( vPointLightVector + viewPosition );
 
       
-      				// specular
+      // specular
 
-				float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
+      float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
       float pointSpecularWeight   = 0.0;  //
-				pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
-
-
-
-					pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
-          
+      pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
+      pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
           
       if ( pointDotNormalHalf >= 0.0 )    pointSpecularWeight = pow( pointDotNormalHalf, uShininess );  // no spectex
-
       pointDiffuse                  += vec4( uDiffuseColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointDiffuseWeight;
 
       // all lights contribution summation
-
 
       vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
       totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse + pointSpecular );
@@ -258,9 +251,7 @@
     try {
         renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth, window.innerHeight );
-        // renderer.setSize( 1300, 512 );
         renderer.autoClear = false;
-        // renderer.context.getExtension('OES_standard_derivatives');
         container.appendChild( renderer.domElement );
     }
     catch (e) {
@@ -294,7 +285,6 @@
     
     // --- Lights
         
-    // ambientLight = new THREE.AmbientLight( 0xffffff );
     ambientLight = new THREE.AmbientLight( 0xffffff );
     scene.add( ambientLight );
 
@@ -372,8 +362,6 @@
             uniforms: uniforms,
             vertexShader: document.getElementById( 'vertex_shader' ).textContent,
             fragmentShader: document.getElementById( 'fragment_shader' ).textContent,
-            // vertexShader: shader.vertexShader,
-            // fragmentShader: shader.fragmentShader,
             side: THREE.DoubleSide
     } );
 

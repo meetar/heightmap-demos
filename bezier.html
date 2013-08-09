@@ -205,20 +205,12 @@
   <script type="text/javascript">
     var div1 = container = document.getElementById( 'div1' );
     var camera, scene, renderer, container;
-    var light, ambientLight, pointLight, moon;
+    var light, ambientLight, pointLight;
     var uniforms, attributes;
-
-    var t           = 0;
-    var diameter    = 1200;
-    var dist_x      = 0;
-    var step        = 0;
 
     function start(){
         init();
-        // setInterval( loop, 1000 / 60 );
     }
-    
-    
     
     
     function init() {
@@ -272,16 +264,11 @@
       // MATERIAL
 
       var ambient = 0xffffff, diffuse = 0xffffff, shininess = 4.0, scale = 100;
-
-      
       
       var dispTexture = THREE.ImageUtils.loadTexture( 'SRTM_US_scaled_512.jpg' , {}, function() { render(); } );
       var diffTexture = dispTexture;
       var shader = THREE.ShaderLib[ "normalmap" ];
       uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-
-      
-      
       
       uniforms[ "enableDisplacement" ].value = true;
       uniforms[ "enableDiffuse" ].value = true;
@@ -318,8 +305,6 @@
     }
 
     function update() {
-      // t+= 0.01;
-      // moon.rotation.y = t / 4;
       render();
       controls.update();
     }

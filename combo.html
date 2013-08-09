@@ -73,12 +73,8 @@
           vec3 dv                 = texture2D( tDisplacement, vUv ).xyz;
           vec3 ov                 = texture2D( tOriginal, vUv ).xyz;
           float df                = uDisplacementScale * dv.x + uDisplacementBias;
-          // float of                = tOriginalOpacity * ov.x;
           float of                = tOriginalOpacity * 100.0 * ov.x;
-          // blend == photoshop screen
-          // float blend             = 1. - ( 1. - df ) * ( 1. - of );
           float crossfade         = df * (1. - tOriginalOpacity) + of ;
-          //float normalize         =
           
           // vec4 displacedPosition  = vec4( vNormal.xyz * df * uDisplacementPostScale/100.0, 0.0 ) + mvPosition;
           vec4 displacedPosition  = vec4( vNormal.xyz * crossfade * uDisplacementPostScale/100.0, 0.0 ) + mvPosition;
@@ -131,10 +127,9 @@
     varying vec3 vViewPosition;
 
     uniform float uDisplacementPostScale;
-
       
-  uniform sampler2D bumpMap;
-  uniform float bumpScale;
+    uniform sampler2D bumpMap;
+    uniform float bumpScale;
 
   // Derivative maps - bump mapping unparametrized surfaces by Morten Mikkelsen
   //	http://mmikkelsen3d.blogspot.sk/2011/07/derivative-maps.html
@@ -150,9 +145,9 @@
     float dBy = bumpScale * texture2D( tDisplacement, vUv + dSTdy ).x - hll;
     
     return vec2( dBx, dBy );
- 
   }
 
+  // an alternate version of dHdxy_fwd() to cope with the overlay. hacky but fast
   vec2 dHdxy_fwd_orig() {
     vec2 dSTdx = dFdx( vUv );
     vec2 dSTdy = dFdy( vUv );
@@ -162,7 +157,6 @@
     float dBy = bumpScale * texture2D( tOriginal, vUv + dSTdy ).x - hll;
     
     return vec2( dBx, dBy );
- 
   }
 
   vec3 perturbNormalArb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy ) {
@@ -178,7 +172,6 @@
 
     vec3 vGrad = sign( fDet ) * ( dHdxy.x * R1 + dHdxy.y * R2 );
     return normalize( abs( fDet ) * surf_norm - vGrad );
-    
   }
 
    
@@ -186,7 +179,6 @@
 
       vec4 diffuseTex     = texture2D( tDiffuse, vUv ) * tDiffuseOpacity;
       vec4 originalTex    = texture2D( tOriginal, vUv ) * tOriginalOpacity;
-      // vec4 diffuseTex     = texture2D( tOriginal, vUv ) * tOriginalOpacity;
       vec4 finalTex       = (diffuseTex * (1. - tOriginalOpacity) + originalTex) * tDiffuseOpacity;
       
       // vec3 specTex        = texture2D( tSpec, vUv ).xyz;
@@ -216,25 +208,18 @@
       float pointDiffuseWeight = max( dotProduct, 0.0 );
       
       vec3 pointHalfVector        = normalize( vPointLightVector + viewPosition );
-
       
-      				// specular
+      // specular
 
-				float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
+      float pointDotNormalHalf = max( dot( normal, pointHalfVector ), 0.0 );
       float pointSpecularWeight   = 0.0;  //
-				pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
-
-
-
-					pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
-          
+      pointSpecularWeight += max( pow( pointDotNormalHalf, uShininess ), 0.0 );
+      pointSpecular += vec4( uSpecularColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointSpecularWeight * pointDiffuseWeight;
           
       if ( pointDotNormalHalf >= 0.0 )    pointSpecularWeight = pow( pointDotNormalHalf, uShininess );  // no spectex
-
       pointDiffuse                  += vec4( uDiffuseColor, 1.0 ) * vec4( uPointLightColor, 1.0 ) * pointDiffuseWeight;
 
       // all lights contribution summation
-
 
       vec4 totalLight             = vec4( uAmbientLightColor * uAmbientColor , 1.0 ); // orig
       totalLight                 += vec4( uPointLightColor, 1.0 ) * ( pointDiffuse + pointSpecular );
@@ -290,13 +275,7 @@
         renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth, window.innerHeight );
         renderer.autoClear = false;
-        // renderer.context.getExtension('OES_standard_derivatives');
         container.appendChild( renderer.domElement );
-        
-        // var domElement = document.createElement( 'canvas' );
-// var gl = domElement.getContext('webgl') || domElement.getContext('experimental-webgl');
-// gl.getExtension('OES_standard_derivatives');
-
     }
     catch (e) {
         alert(e);
@@ -330,7 +309,6 @@
     
     // --- Lights
         
-    // ambientLight = new THREE.AmbientLight( 0xffffff );
     ambientLight = new THREE.AmbientLight( 0xffffff );
     scene.add( ambientLight );
 
@@ -350,7 +328,6 @@
     var ambient = 0x000000, diffuse = 0x666666, specular = 0xffffff, shininess = 50.0, scale = 100;
 
     diffTexture = new THREE.Texture(imgc);
-    // dispTexture = new THREE.Texture(imgc);
     originalTexture = new THREE.Texture(oimgc);
 
 
@@ -413,8 +390,6 @@
             uniforms: uniforms,
             vertexShader: document.getElementById( 'vertex_shader' ).textContent,
             fragmentShader: document.getElementById( 'fragment_shader' ).textContent,
-            // vertexShader: shader.vertexShader,
-            // fragmentShader: shader.fragmentShader,
             side: THREE.DoubleSide
     } );
 
@@ -427,7 +402,6 @@
         rings = 128;
 
     geometry = new THREE.PlaneGeometry(512, 256, 512, 256);
-    // geometry = new THREE.SphereGeometry( radius, segments, rings);
     geometry.computeTangents();
     var geo = new THREE.Mesh( geometry, material);
     geo.rotation.y = Math.PI;
@@ -479,7 +453,6 @@ function imageFromCanvas(canvas) {
     for (var i=0; i<n*m; i++) {
         image[i] = data[i*4]
     }
-    // log(image)
     return image
 }
 
@@ -533,14 +506,11 @@ function imageFromCanvas(canvas) {
 
         data[i*4+3] = 255
     }
-    // log("drawImage: "+canvas+" finalImage")
-  // log(finalImage)
     context.putImageData(finalImage, 0, 0)
     
     geometry.normalsNeedUpdate = true;
     geometry.tangentsNeedUpdate = true;
     diffTexture.needsUpdate = true;
-    // dispTexture.needsUpdate = true;
     originalTexture.needsUpdate = true;
     geometry.computeTangents();
 
