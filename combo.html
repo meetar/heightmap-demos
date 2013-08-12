@@ -128,7 +128,6 @@
 
     uniform float uDisplacementPostScale;
       
-    uniform sampler2D bumpMap;
     uniform float bumpScale;
 
   // Derivative maps - bump mapping unparametrized surfaces by Morten Mikkelsen
@@ -373,12 +372,6 @@
 
     uniforms[ "uDisplacementPostScale" ] = {type: 'f', value: 50 };
 
-    
-    
-    // pull in bits from phong
-
-		uniforms[ "enableBump" ] = { type: "i", value: 1 };
-    uniforms[ "bumpMap" ] = { type: "t", value: diffTexture };
 		uniforms[ "bumpScale" ] = { type: "f", value: 10 };
 
 
