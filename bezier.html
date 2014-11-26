@@ -82,7 +82,7 @@
       float x = getPointOnCubic(percent)[0];
 
       // loop until completion
-      while(abs(xTarget - x) > xTolerance) {
+      for (int i = 0; i < 1000; i ++) {
         if(xTarget > x) 
           lower = percent;
         else 
@@ -90,6 +90,7 @@
 
         percent = (upper + lower) / 2.0;
         x = getPointOnCubic(percent)[0];
+        if (abs(xTarget - x) > xTolerance) break;
       }
       // we're within tolerance of the desired x value,
       // return the y value.
