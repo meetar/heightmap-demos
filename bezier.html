@@ -90,7 +90,7 @@
 
         percent = (upper + lower) / 2.0;
         x = getPointOnCubic(percent)[0];
-        if (abs(xTarget - x) > xTolerance) break;
+        if (abs(xTarget - x) < xTolerance) break;
       }
       // we're within tolerance of the desired x value,
       // return the y value.
