@@ -71,7 +71,7 @@
     // at coordinate x - brute binary search
     // adapted from http://stackoverflow.com/a/7355667/738675
     float yFromX( float xTarget ) {
-      float xTolerance = 0.0001; // adjust to taste
+      float xTolerance = 0.1; // adjust to taste
 
       // establish bounds
       float lower = 0.0;
@@ -81,8 +81,8 @@
       // set an initial x to start searching from
       float x = getPointOnCubic(percent)[0];
 
-      // loop until completion
-      for (int i = 0; i < 1000; i ++) {
+      // loop until completion or tolerance is met
+      for (int i = 0; i < 10; i ++) {
         if(xTarget > x) 
           lower = percent;
         else 
